@@ -1,33 +1,43 @@
+
 import {
   defer,
   type MetaArgs,
   type LoaderFunctionArgs,
 } from '@shopify/remix-oxygen';
-import {Suspense} from 'react';
-import {Await, useLoaderData} from '@remix-run/react';
-import {getSeoMeta} from '@shopify/hydrogen';
+import { Suspense, useRef, useEffect } from 'react';
+import { Await, useLoaderData } from '@remix-run/react';
+import { getSeoMeta } from '@shopify/hydrogen';
 
-import {Hero} from '~/components/Hero';
-import {FeaturedCollections} from '~/components/FeaturedCollections';
-import {ProductSwimlane} from '~/components/ProductSwimlane';
-import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
-import {getHeroPlaceholder} from '~/lib/placeholders';
-import {seoPayload} from '~/lib/seo.server';
-import {routeHeaders} from '~/data/cache';
+import { Hero } from '~/components/Hero';
+import { FeaturedCollections } from '~/components/FeaturedCollections';
+import { ProductSwimlane } from '~/components/ProductSwimlane';
+import { ShopByCategory } from '~/components/ShopByCategory';
+import { PromotionalBanner } from '~/components/PromotionalBanner';
+import { ShopByActivity } from '~/components/ShopByActivity';
+import { CustomerReviews } from '~/components/CustomerReviews';
+import { EuforycEssentials } from '~/components/EuforycEssentials';
+import { Link } from '@remix-run/react';
+import { motion } from 'framer-motion';
+import { MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT } from '~/data/fragments';
+import { getHeroPlaceholder } from '~/lib/placeholders';
+import { seoPayload } from '~/lib/seo.server';
+import { routeHeaders } from '~/data/cache';
 
 export const headers = routeHeaders;
 
+import { IconArrow } from '~/components/Icon';
+
 export async function loader(args: LoaderFunctionArgs) {
-  const {params, context} = args;
-  const {language, country} = context.storefront.i18n;
+  const { params, context } = args;
+  const { language, country } = context.storefront.i18n;
 
   if (
     params.locale &&
-    params.locale.toLowerCase() !== `${language}-${country}`.toLowerCase()
+    params.locale.toLowerCase() !== `${language} -${country} `.toLowerCase()
   ) {
-    // If the locale URL param is defined, yet we still are on `EN-US`
+    // If the locale URL param is defined, yet we still are on `EN - US`
     // the the locale param must be invalid, send to the 404 page
-    throw new Response(null, {status: 404});
+    throw new Response(null, { status: 404 });
   }
 
   // Start fetching non-critical data without blocking time to first byte
@@ -36,17 +46,17 @@ export async function loader(args: LoaderFunctionArgs) {
   // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
 
-  return defer({...deferredData, ...criticalData});
+  return defer({ ...deferredData, ...criticalData });
 }
 
 /**
  * Load data necessary for rendering content above the fold. This is the critical data
  * needed to render the page. If it's unavailable, the whole page should 400 or 500 error.
  */
-async function loadCriticalData({context, request}: LoaderFunctionArgs) {
-  const [{shop, hero}] = await Promise.all([
+async function loadCriticalData({ context, request }: LoaderFunctionArgs) {
+  const [{ shop, hero }] = await Promise.all([
     context.storefront.query(HOMEPAGE_SEO_QUERY, {
-      variables: {handle: 'freestyle'},
+      variables: { handle: 'freestyle' },
     }),
     // Add other queries here, so that they are loaded in parallel
   ]);
@@ -54,7 +64,7 @@ async function loadCriticalData({context, request}: LoaderFunctionArgs) {
   return {
     shop,
     primaryHero: hero,
-    seo: seoPayload.home({url: request.url}),
+    seo: seoPayload.home({ url: request.url }),
   };
 }
 
@@ -63,8 +73,8 @@ async function loadCriticalData({context, request}: LoaderFunctionArgs) {
  * fetched after the initial page load. If it's unavailable, the page should still 200.
  * Make sure to not throw any errors here, as it will cause the page to 500.
  */
-function loadDeferredData({context}: LoaderFunctionArgs) {
-  const {language, country} = context.storefront.i18n;
+function loadDeferredData({ context }: LoaderFunctionArgs) {
+  const { language, country } = context.storefront.i18n;
 
   const featuredProducts = context.storefront
     .query(HOMEPAGE_FEATURED_PRODUCTS_QUERY, {
@@ -137,7 +147,7 @@ function loadDeferredData({context}: LoaderFunctionArgs) {
   };
 }
 
-export const meta = ({matches}: MetaArgs<typeof loader>) => {
+export const meta = ({ matches }: MetaArgs<typeof loader>) => {
   return getSeoMeta(...matches.map((match) => (match.data as any).seo));
 };
 
@@ -153,171 +163,172 @@ export default function Homepage() {
   // TODO: skeletons vs placeholders
   const skeletons = getHeroPlaceholder([{}, {}, {}]);
 
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.play().catch((error) => {
+        console.error("Video play failed:", error);
+      });
+    }
+  }, []);
+
   return (
-    <>
-      {primaryHero && (
-        <Hero {...primaryHero} height="full" top loading="eager" />
-      )}
+    <div className="bg-cream text-primary w-full overflow-x-hidden">
+      {/* HERO SECTION */}
+      <section className="relative h-screen w-full overflow-hidden">
+        <div className="relative h-screen w-full overflow-hidden">
+          <video
+            ref={videoRef}
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="absolute top-0 left-0 w-full h-full object-cover"
+          >
+            <source
+              src="/assets/hero-video.mp4"
+              type="video/mp4"
+            />
+          </video>
+          <div className="absolute inset-0 bg-black/10 z-10" /> {/* Slight overlay for text readability */}
 
-      {featuredProducts && (
-        <Suspense>
-          <Await resolve={featuredProducts}>
-            {(response) => {
-              if (
-                !response ||
-                !response?.products ||
-                !response?.products?.nodes
-              ) {
-                return <></>;
-              }
-              return (
-                <ProductSwimlane
-                  products={response.products}
-                  title="Featured Products"
-                  count={4}
-                />
-              );
-            }}
-          </Await>
-        </Suspense>
-      )}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center text-white px-4 z-20">
+            <h1
+              className="text-5xl md:text-7xl lg:text-8xl mb-6 tracking-tight lowercase"
+            >
+              Euforyc Essentials
+            </h1>
 
-      {secondaryHero && (
-        <Suspense fallback={<Hero {...skeletons[1]} />}>
-          <Await resolve={secondaryHero}>
-            {(response) => {
-              if (!response || !response?.hero) {
-                return <></>;
-              }
-              return <Hero {...response.hero} />;
-            }}
-          </Await>
-        </Suspense>
-      )}
+            <div
+              className="flex gap-4"
+            >
+              <Link
+                to="/collections/all"
+                className="bg-dark-brown text-cream px-8 py-3 text-sm font-medium uppercase tracking-widest hover:bg-dark-brown/90 transition-colors duration-300"
+              >
+                Shop The Drop
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      {featuredCollections && (
-        <Suspense>
-          <Await resolve={featuredCollections}>
-            {(response) => {
-              if (
-                !response ||
-                !response?.collections ||
-                !response?.collections?.nodes
-              ) {
-                return <></>;
-              }
-              return (
-                <FeaturedCollections
-                  collections={response.collections}
-                  title="Collections"
-                />
-              );
-            }}
-          </Await>
-        </Suspense>
-      )}
+      {/* Minimal Marquee */}
+      <div className="bg-cream py-4 border-b border-dark-brown/5 overflow-hidden whitespace-nowrap">
+        <div className="animate-marquee inline-block">
+          <span className="text-dark-brown/60 text-xs font-medium tracking-[0.2em] uppercase mx-8">Free Shipping on Orders Over $100</span>
+          <span className="text-dark-brown/60 text-xs font-medium tracking-[0.2em] uppercase mx-8">New Drop: Euforyc Essentials</span>
+          <span className="text-dark-brown/60 text-xs font-medium tracking-[0.2em] uppercase mx-8">Worldwide Shipping</span>
+          <span className="text-dark-brown/60 text-xs font-medium tracking-[0.2em] uppercase mx-8">Free Shipping on Orders Over $100</span>
+          <span className="text-dark-brown/60 text-xs font-medium tracking-[0.2em] uppercase mx-8">New Drop: Euforyc Essentials</span>
+          <span className="text-dark-brown/60 text-xs font-medium tracking-[0.2em] uppercase mx-8">Worldwide Shipping</span>
+        </div>
+      </div>
 
-      {tertiaryHero && (
-        <Suspense fallback={<Hero {...skeletons[2]} />}>
-          <Await resolve={tertiaryHero}>
-            {(response) => {
-              if (!response || !response?.hero) {
-                return <></>;
-              }
-              return <Hero {...response.hero} />;
-            }}
-          </Await>
-        </Suspense>
-      )}
-    </>
+      {/* EUFORYC ESSENTIALS */}
+      <EuforycEssentials />
+
+      {/* SHOP BY CATEGORY */}
+      <ShopByCategory />
+
+      {/* PROMOTIONAL BANNER */}
+      <PromotionalBanner />
+
+      {/* SHOP BY ACTIVITY */}
+      <ShopByActivity />
+
+      {/* CUSTOMER REVIEWS */}
+      <CustomerReviews />
+    </div >
   );
 }
 
 const COLLECTION_CONTENT_FRAGMENT = `#graphql
-  fragment CollectionContent on Collection {
-    id
-    handle
-    title
-    descriptionHtml
-    heading: metafield(namespace: "hero", key: "title") {
-      value
-    }
-    byline: metafield(namespace: "hero", key: "byline") {
-      value
-    }
-    cta: metafield(namespace: "hero", key: "cta") {
-      value
-    }
-    spread: metafield(namespace: "hero", key: "spread") {
-      reference {
-        ...Media
-      }
-    }
-    spreadSecondary: metafield(namespace: "hero", key: "spread_secondary") {
-      reference {
-        ...Media
-      }
+        fragment CollectionContent on Collection {
+  id
+  handle
+  title
+  descriptionHtml
+  heading: metafield(namespace: "hero", key: "title") {
+    value
+  }
+  byline: metafield(namespace: "hero", key: "byline") {
+    value
+  }
+  cta: metafield(namespace: "hero", key: "cta") {
+    value
+  }
+  spread: metafield(namespace: "hero", key: "spread") {
+          reference {
+          ...Media
     }
   }
-  ${MEDIA_FRAGMENT}
+  spreadSecondary: metafield(namespace: "hero", key: "spread_secondary") {
+          reference {
+          ...Media
+    }
+  }
+}
+        ${MEDIA_FRAGMENT}
 ` as const;
 
 const HOMEPAGE_SEO_QUERY = `#graphql
-  query seoCollectionContent($handle: String, $country: CountryCode, $language: LanguageCode)
-  @inContext(country: $country, language: $language) {
-    hero: collection(handle: $handle) {
-      ...CollectionContent
-    }
-    shop {
-      name
-      description
-    }
+        query seoCollectionContent($handle: String, $country: CountryCode, $language: LanguageCode)
+@inContext(country: $country, language: $language) {
+  hero: collection(handle: $handle) {
+          ...CollectionContent
   }
-  ${COLLECTION_CONTENT_FRAGMENT}
+        shop {
+    name
+    description
+  }
+}
+        ${COLLECTION_CONTENT_FRAGMENT}
 ` as const;
 
 const COLLECTION_HERO_QUERY = `#graphql
-  query heroCollectionContent($handle: String, $country: CountryCode, $language: LanguageCode)
-  @inContext(country: $country, language: $language) {
-    hero: collection(handle: $handle) {
-      ...CollectionContent
-    }
+        query heroCollectionContent($handle: String, $country: CountryCode, $language: LanguageCode)
+@inContext(country: $country, language: $language) {
+  hero: collection(handle: $handle) {
+          ...CollectionContent
   }
-  ${COLLECTION_CONTENT_FRAGMENT}
+}
+        ${COLLECTION_CONTENT_FRAGMENT}
 ` as const;
 
 // @see: https://shopify.dev/api/storefront/current/queries/products
 export const HOMEPAGE_FEATURED_PRODUCTS_QUERY = `#graphql
-  query homepageFeaturedProducts($country: CountryCode, $language: LanguageCode)
-  @inContext(country: $country, language: $language) {
-    products(first: 8) {
-      nodes {
-        ...ProductCard
-      }
+        query homepageFeaturedProducts($country: CountryCode, $language: LanguageCode)
+@inContext(country: $country, language: $language) {
+  products(first: 8) {
+          nodes {
+          ...ProductCard
     }
   }
-  ${PRODUCT_CARD_FRAGMENT}
+}
+        ${PRODUCT_CARD_FRAGMENT}
 ` as const;
 
 // @see: https://shopify.dev/api/storefront/current/queries/collections
 export const FEATURED_COLLECTIONS_QUERY = `#graphql
-  query homepageFeaturedCollections($country: CountryCode, $language: LanguageCode)
-  @inContext(country: $country, language: $language) {
-    collections(
-      first: 4,
-      sortKey: UPDATED_AT
-    ) {
-      nodes {
-        id
-        title
-        handle
+        query homepageFeaturedCollections($country: CountryCode, $language: LanguageCode)
+@inContext(country: $country, language: $language) {
+  collections(
+    first: 4,
+    sortKey: UPDATED_AT
+  ) {
+          nodes {
+      id
+      title
+      handle
         image {
-          altText
-          width
-          height
-          url
-        }
+        altText
+        width
+        height
+        url
       }
     }
   }
+}
 ` as const;

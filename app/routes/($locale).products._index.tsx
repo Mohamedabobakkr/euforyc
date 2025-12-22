@@ -1,131 +1,100 @@
-import {
-  json,
-  type MetaArgs,
-  type LoaderFunctionArgs,
-} from '@shopify/remix-oxygen';
-import {useLoaderData} from '@remix-run/react';
-import invariant from 'tiny-invariant';
-import {
-  Pagination,
-  getPaginationVariables,
-  getSeoMeta,
-} from '@shopify/hydrogen';
+import { json, type MetaArgs } from '@shopify/remix-oxygen';
+import { Link } from '~/components/Link';
+import { PageHeader, Section } from '~/components/Text';
+import { getSeoMeta } from '@shopify/hydrogen';
+import { seoPayload } from '~/lib/seo.server';
+import { routeHeaders } from '~/data/cache';
 
-import {PageHeader, Section} from '~/components/Text';
-import {ProductCard} from '~/components/ProductCard';
-import {Grid} from '~/components/Grid';
-import {PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
-import {getImageLoadingPriority} from '~/lib/const';
-import {seoPayload} from '~/lib/seo.server';
-import {routeHeaders} from '~/data/cache';
-
-const PAGE_BY = 8;
+import wrapTopImg from '~/assets/wrap-top-green.png';
+import leggingsImg from '~/assets/leggings-green.png';
+import wideLegImg from '~/assets/wide-leg-green.png';
 
 export const headers = routeHeaders;
 
-export async function loader({
-  request,
-  context: {storefront},
-}: LoaderFunctionArgs) {
-  const variables = getPaginationVariables(request, {pageBy: PAGE_BY});
+const PRODUCTS = [
+  {
+    id: 'wrap-top',
+    title: 'Soft Jersey Wrap Crop Top',
+    price: '£38.00',
+    image: wrapTopImg,
+    handle: 'soft-jersey-wrap-crop-top',
+    color: 'Dark Racing Green'
+  },
+  {
+    id: 'leggings',
+    title: 'Sculpt Seamless Scrunch Legging',
+    price: '£54.00',
+    image: wrapTopImg, // Using wrapTopImg temporarily as per previous instruction
+    handle: 'sculpt-seamless-scrunch-legging',
+    color: 'Slate Green'
+  },
+  {
+    id: 'wide-leg',
+    title: 'SoftMotion™ Flared Bottoms',
+    price: '£64.00',
+    image: wrapTopImg, // Using wrapTopImg temporarily as per previous instruction
+    handle: 'softmotion-flared-bottoms',
+    color: 'Dark Racing Green'
+  }
+];
 
-  const data = await storefront.query(ALL_PRODUCTS_QUERY, {
-    variables: {
-      ...variables,
-      country: storefront.i18n.country,
-      language: storefront.i18n.language,
-    },
-  });
-
-  invariant(data, 'No data returned from Shopify API');
-
+export async function loader({ request }: { request: Request }) {
   const seo = seoPayload.collection({
     url: request.url,
     collection: {
       id: 'all-products',
-      title: 'All Products',
+      title: 'Shop',
       handle: 'products',
-      descriptionHtml: 'All the store products',
-      description: 'All the store products',
+      descriptionHtml: 'Euforyc Essentials',
+      description: 'Euforyc Essentials',
       seo: {
-        title: 'All Products',
-        description: 'All the store products',
+        title: 'Shop | Euforyc',
+        description: 'Euforyc Essentials Collection',
       },
       metafields: [],
-      products: data.products,
+      products: { nodes: [] },
       updatedAt: '',
     },
   });
 
   return json({
-    products: data.products,
     seo,
   });
 }
 
-export const meta = ({matches}: MetaArgs<typeof loader>) => {
+export const meta = ({ matches }: MetaArgs<typeof loader>) => {
   return getSeoMeta(...matches.map((match) => (match.data as any).seo));
 };
 
 export default function AllProducts() {
-  const {products} = useLoaderData<typeof loader>();
-
   return (
     <>
-      <PageHeader heading="All Products" variant="allCollections" />
+      <PageHeader heading="Shop" variant="allCollections" />
       <Section>
-        <Pagination connection={products}>
-          {({nodes, isLoading, NextLink, PreviousLink}) => {
-            const itemsMarkup = nodes.map((product, i) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                loading={getImageLoadingPriority(i)}
-              />
-            ));
-
-            return (
-              <>
-                <div className="flex items-center justify-center mt-6">
-                  <PreviousLink className="inline-block rounded font-medium text-center py-3 px-6 border border-primary/10 bg-contrast text-primary w-full">
-                    {isLoading ? 'Loading...' : 'Previous'}
-                  </PreviousLink>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+          {PRODUCTS.map((product) => (
+            <div key={product.id} className="group">
+              <Link to={`/products/${product.handle}`} className="block overflow-hidden relative aspect-[4/5] mb-4">
+                <img
+                  src={product.image}
+                  alt={product.title}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <button className="w-full bg-white text-black py-3 text-xs font-bold uppercase tracking-widest hover:bg-gray-100 shadow-sm">
+                    Quick Add
+                  </button>
                 </div>
-                <Grid data-test="product-grid">{itemsMarkup}</Grid>
-                <div className="flex items-center justify-center mt-6">
-                  <NextLink className="inline-block rounded font-medium text-center py-3 px-6 border border-primary/10 bg-contrast text-primary w-full">
-                    {isLoading ? 'Loading...' : 'Next'}
-                  </NextLink>
-                </div>
-              </>
-            );
-          }}
-        </Pagination>
+              </Link>
+              <div className="flex flex-col gap-1">
+                <h3 className="font-serif text-lg text-dark-brown">{product.title}</h3>
+                <p className="text-sm text-gray-500">{product.color}</p>
+                <p className="text-sm font-bold text-dark-brown">{product.price}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </Section>
     </>
   );
 }
-
-const ALL_PRODUCTS_QUERY = `#graphql
-  query AllProducts(
-    $country: CountryCode
-    $language: LanguageCode
-    $first: Int
-    $last: Int
-    $startCursor: String
-    $endCursor: String
-  ) @inContext(country: $country, language: $language) {
-    products(first: $first, last: $last, before: $startCursor, after: $endCursor) {
-      nodes {
-        ...ProductCard
-      }
-      pageInfo {
-        hasPreviousPage
-        hasNextPage
-        startCursor
-        endCursor
-      }
-    }
-  }
-  ${PRODUCT_CARD_FRAGMENT}
-` as const;

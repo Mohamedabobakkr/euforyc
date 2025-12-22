@@ -1,11 +1,11 @@
-import {useRef, Suspense} from 'react';
-import {Disclosure, Listbox} from '@headlessui/react';
+import { useRef, Suspense } from 'react';
+import { Disclosure, Listbox } from '@headlessui/react';
 import {
   defer,
   type MetaArgs,
   type LoaderFunctionArgs,
 } from '@shopify/remix-oxygen';
-import {useLoaderData, Await} from '@remix-run/react';
+import { useLoaderData, Await } from '@remix-run/react';
 import {
   getSeoMeta,
   Money,
@@ -25,25 +25,25 @@ import type {
   ProductOptionValueSwatch,
 } from '@shopify/hydrogen/storefront-api-types';
 
-import type {ProductFragment} from 'storefrontapi.generated';
-import {Heading, Section, Text} from '~/components/Text';
-import {Link} from '~/components/Link';
-import {Button} from '~/components/Button';
-import {AddToCartButton} from '~/components/AddToCartButton';
-import {Skeleton} from '~/components/Skeleton';
-import {ProductSwimlane} from '~/components/ProductSwimlane';
-import {ProductGallery} from '~/components/ProductGallery';
-import {IconCaret, IconCheck, IconClose} from '~/components/Icon';
-import {getExcerpt} from '~/lib/utils';
-import {seoPayload} from '~/lib/seo.server';
-import type {Storefront} from '~/lib/type';
-import {routeHeaders} from '~/data/cache';
-import {MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT} from '~/data/fragments';
+import type { ProductFragment } from 'storefrontapi.generated';
+import { Heading, Section, Text } from '~/components/Text';
+import { Link } from '~/components/Link';
+import { Button } from '~/components/Button';
+import { AddToCartButton } from '~/components/AddToCartButton';
+import { Skeleton } from '~/components/Skeleton';
+import { ProductSwimlane } from '~/components/ProductSwimlane';
+import { ProductGallery } from '~/components/ProductGallery';
+import { IconCaret, IconCheck, IconClose } from '~/components/Icon';
+import { getExcerpt } from '~/lib/utils';
+import { seoPayload } from '~/lib/seo.server';
+import type { Storefront } from '~/lib/type';
+import { routeHeaders } from '~/data/cache';
+import { MEDIA_FRAGMENT, PRODUCT_CARD_FRAGMENT } from '~/data/fragments';
 
 export const headers = routeHeaders;
 
 export async function loader(args: LoaderFunctionArgs) {
-  const {productHandle} = args.params;
+  const { productHandle } = args.params;
   invariant(productHandle, 'Missing productHandle param, check route filename');
 
   // Start fetching non-critical data without blocking time to first byte
@@ -52,7 +52,7 @@ export async function loader(args: LoaderFunctionArgs) {
   // Await the critical data required to render initial state of the page
   const criticalData = await loadCriticalData(args);
 
-  return defer({...deferredData, ...criticalData});
+  return defer({ ...deferredData, ...criticalData });
 }
 
 /**
@@ -64,12 +64,12 @@ async function loadCriticalData({
   request,
   context,
 }: LoaderFunctionArgs) {
-  const {productHandle} = params;
+  const { productHandle } = params;
   invariant(productHandle, 'Missing productHandle param, check route filename');
 
   const selectedOptions = getSelectedProductOptions(request);
 
-  const [{shop, product}] = await Promise.all([
+  const [{ shop, product }] = await Promise.all([
     context.storefront.query(PRODUCT_QUERY, {
       variables: {
         handle: productHandle,
@@ -82,7 +82,7 @@ async function loadCriticalData({
   ]);
 
   if (!product?.id) {
-    throw new Response('product', {status: 404});
+    throw new Response('product', { status: 404 });
   }
 
   const recommended = getRecommendedProducts(context.storefront, product.id);
@@ -90,7 +90,7 @@ async function loadCriticalData({
   const variants = getAdjacentAndFirstAvailableVariants(product);
 
   const seo = seoPayload.product({
-    product: {...product, variants},
+    product: { ...product, variants },
     selectedVariant,
     url: request.url,
   });
@@ -117,15 +117,15 @@ function loadDeferredData(args: LoaderFunctionArgs) {
   return {};
 }
 
-export const meta = ({matches}: MetaArgs<typeof loader>) => {
+export const meta = ({ matches }: MetaArgs<typeof loader>) => {
   return getSeoMeta(...matches.map((match) => (match.data as any).seo));
 };
 
 export default function Product() {
-  const {product, shop, recommended, variants, storeDomain} =
+  const { product, shop, recommended, variants, storeDomain } =
     useLoaderData<typeof loader>();
-  const {media, title, vendor, descriptionHtml} = product;
-  const {shippingPolicy, refundPolicy} = shop;
+  const { media, title, vendor, descriptionHtml } = product;
+  const { shippingPolicy, refundPolicy } = shop;
 
   // Optimistically selects a variant with given available variant information
   const selectedVariant = useOptimisticVariant(
@@ -254,7 +254,7 @@ export function ProductForm({
               {option.optionValues.length > 7 ? (
                 <div className="relative w-full">
                   <Listbox>
-                    {({open}) => (
+                    {({ open }) => (
                       <>
                         <Listbox.Button
                           ref={closeRef}
@@ -295,7 +295,7 @@ export function ProductForm({
                                 >
                                   <Link
                                     {...(!isDifferentProduct
-                                      ? {rel: 'nofollow'}
+                                      ? { rel: 'nofollow' }
                                       : {})}
                                     to={`/products/${handle}?${variantUriQuery}`}
                                     preventScrollReset
@@ -336,7 +336,7 @@ export function ProductForm({
                   }) => (
                     <Link
                       key={option.name + name}
-                      {...(!isDifferentProduct ? {rel: 'nofollow'} : {})}
+                      {...(!isDifferentProduct ? { rel: 'nofollow' } : {})}
                       to={`/products/${handle}?${variantUriQuery}`}
                       preventScrollReset
                       prefetch="intent"
@@ -444,7 +444,7 @@ function ProductDetail({
 }) {
   return (
     <Disclosure key={title} as="div" className="grid w-full gap-2">
-      {({open}) => (
+      {({ open }) => (
         <>
           <Disclosure.Button className="text-left">
             <div className="flex justify-between">
@@ -463,7 +463,7 @@ function ProductDetail({
           <Disclosure.Panel className={'pb-4 pt-2 grid gap-2'}>
             <div
               className="prose dark:prose-invert"
-              dangerouslySetInnerHTML={{__html: content}}
+              dangerouslySetInnerHTML={{ __html: content }}
             />
             {learnMore && (
               <div className="">
@@ -612,28 +612,90 @@ const RECOMMENDED_PRODUCTS_QUERY = `#graphql
   ${PRODUCT_CARD_FRAGMENT}
 ` as const;
 
+import wrapTopImg from '~/assets/wrap-top-green.png';
+
 async function getRecommendedProducts(
   storefront: Storefront,
   productId: string,
 ) {
-  const products = await storefront.query(RECOMMENDED_PRODUCTS_QUERY, {
-    variables: {productId, count: 12},
-  });
+  // Hardcoded Euforyc products to replace snowboards in recommendations
+  const hardcodedProducts = [
+    {
+      id: 'wrap-top',
+      title: 'Soft Jersey Wrap Crop Top',
+      publishedAt: new Date().toISOString(),
+      handle: 'soft-jersey-wrap-crop-top',
+      variants: {
+        nodes: [
+          {
+            id: 'var-1',
+            image: {
+              url: wrapTopImg,
+              altText: 'Soft Jersey Wrap Crop Top',
+              width: 1000,
+              height: 1250,
+            },
+            price: {
+              amount: '38.00',
+              currencyCode: 'GBP',
+            },
+            compareAtPrice: null,
+            availableForSale: true,
+          },
+        ],
+      },
+    },
+    {
+      id: 'leggings',
+      title: 'Sculpt Seamless Scrunch Legging',
+      publishedAt: new Date().toISOString(),
+      handle: 'sculpt-seamless-scrunch-legging',
+      variants: {
+        nodes: [
+          {
+            id: 'var-2',
+            image: {
+              url: wrapTopImg, // Using wrapTopImg temporarily
+              altText: 'Sculpt Seamless Scrunch Legging',
+              width: 1000,
+              height: 1250,
+            },
+            price: {
+              amount: '54.00',
+              currencyCode: 'GBP',
+            },
+            compareAtPrice: null,
+            availableForSale: true,
+          },
+        ],
+      },
+    },
+    {
+      id: 'wide-leg',
+      title: 'SoftMotion™ Flared Bottoms',
+      publishedAt: new Date().toISOString(),
+      handle: 'softmotion-flared-bottoms',
+      variants: {
+        nodes: [
+          {
+            id: 'var-3',
+            image: {
+              url: wrapTopImg, // Using wrapTopImg temporarily
+              altText: 'SoftMotion™ Flared Bottoms',
+              width: 1000,
+              height: 1250,
+            },
+            price: {
+              amount: '64.00',
+              currencyCode: 'GBP',
+            },
+            compareAtPrice: null,
+            availableForSale: true,
+          },
+        ],
+      },
+    },
+  ];
 
-  invariant(products, 'No data returned from Shopify API');
-
-  const mergedProducts = (products.recommended ?? [])
-    .concat(products.additional.nodes)
-    .filter(
-      (value, index, array) =>
-        array.findIndex((value2) => value2.id === value.id) === index,
-    );
-
-  const originalProduct = mergedProducts.findIndex(
-    (item) => item.id === productId,
-  );
-
-  mergedProducts.splice(originalProduct, 1);
-
-  return {nodes: mergedProducts};
+  return { nodes: hardcodedProducts };
 }

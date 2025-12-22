@@ -6,8 +6,6 @@ import {
   useRouteLoaderData,
 } from '@remix-run/react';
 
-import type {RootLoader} from '~/root';
-
 type LinkProps = Omit<RemixLinkProps, 'className'> & {
   className?: RemixNavLinkProps['className'] | RemixLinkProps['className'];
 };
@@ -28,8 +26,8 @@ type LinkProps = Omit<RemixLinkProps, 'className'> & {
  * Ultimately, it is up to you to decide how to implement this behavior.
  */
 export function Link(props: LinkProps) {
-  const {to, className, ...resOfProps} = props;
-  const rootData = useRouteLoaderData<RootLoader>('root');
+  const { to, className, ...resOfProps } = props;
+  const rootData = useRouteLoaderData<any>('root');
   const selectedLocale = rootData?.selectedLocale;
 
   let toWithLocale = to;

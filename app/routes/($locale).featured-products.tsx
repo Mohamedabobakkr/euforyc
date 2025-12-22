@@ -1,53 +1,100 @@
-import {json, type LoaderFunctionArgs} from '@shopify/remix-oxygen';
-import invariant from 'tiny-invariant';
+import { json, type LoaderFunctionArgs } from '@shopify/remix-oxygen';
+import wrapTopImg from '~/assets/wrap-top-green.png';
 
-import {
-  PRODUCT_CARD_FRAGMENT,
-  FEATURED_COLLECTION_FRAGMENT,
-} from '~/data/fragments';
-
-export async function loader({context: {storefront}}: LoaderFunctionArgs) {
+export async function loader({ context: { storefront } }: LoaderFunctionArgs) {
   return json(await getFeaturedData(storefront));
 }
 
 export async function getFeaturedData(
   storefront: LoaderFunctionArgs['context']['storefront'],
-  variables: {pageBy?: number} = {},
+  variables: { pageBy?: number } = {},
 ) {
-  const data = await storefront.query(FEATURED_ITEMS_QUERY, {
-    variables: {
-      pageBy: 12,
-      country: storefront.i18n.country,
-      language: storefront.i18n.language,
-      ...variables,
-    },
-  });
+  // Hardcoded Euforyc products to replace snowboards
+  const hardcodedProducts = {
+    nodes: [
+      {
+        id: 'wrap-top',
+        title: 'Soft Jersey Wrap Crop Top',
+        publishedAt: new Date().toISOString(),
+        handle: 'soft-jersey-wrap-crop-top',
+        variants: {
+          nodes: [
+            {
+              id: 'var-1',
+              image: {
+                url: wrapTopImg,
+                altText: 'Soft Jersey Wrap Crop Top',
+                width: 1000,
+                height: 1250,
+              },
+              price: {
+                amount: '38.00',
+                currencyCode: 'GBP',
+              },
+              compareAtPrice: null,
+              availableForSale: true,
+            },
+          ],
+        },
+      },
+      {
+        id: 'leggings',
+        title: 'Sculpt Seamless Scrunch Legging',
+        publishedAt: new Date().toISOString(),
+        handle: 'sculpt-seamless-scrunch-legging',
+        variants: {
+          nodes: [
+            {
+              id: 'var-2',
+              image: {
+                url: wrapTopImg, // Using wrapTopImg temporarily
+                altText: 'Sculpt Seamless Scrunch Legging',
+                width: 1000,
+                height: 1250,
+              },
+              price: {
+                amount: '54.00',
+                currencyCode: 'GBP',
+              },
+              compareAtPrice: null,
+              availableForSale: true,
+            },
+          ],
+        },
+      },
+      {
+        id: 'wide-leg',
+        title: 'SoftMotion™ Flared Bottoms',
+        publishedAt: new Date().toISOString(),
+        handle: 'softmotion-flared-bottoms',
+        variants: {
+          nodes: [
+            {
+              id: 'var-3',
+              image: {
+                url: wrapTopImg, // Using wrapTopImg temporarily
+                altText: 'SoftMotion™ Flared Bottoms',
+                width: 1000,
+                height: 1250,
+              },
+              price: {
+                amount: '64.00',
+                currencyCode: 'GBP',
+              },
+              compareAtPrice: null,
+              availableForSale: true,
+            },
+          ],
+        },
+      },
+    ],
+  };
 
-  invariant(data, 'No featured items data returned from Shopify API');
-
-  return data;
+  return {
+    featuredCollections: { nodes: [] },
+    featuredProducts: hardcodedProducts,
+  };
 }
 
 export type FeaturedData = Awaited<ReturnType<typeof getFeaturedData>>;
 
-export const FEATURED_ITEMS_QUERY = `#graphql
-  query FeaturedItems(
-    $country: CountryCode
-    $language: LanguageCode
-    $pageBy: Int = 12
-  ) @inContext(country: $country, language: $language) {
-    featuredCollections: collections(first: 3, sortKey: UPDATED_AT) {
-      nodes {
-        ...FeaturedCollectionDetails
-      }
-    }
-    featuredProducts: products(first: $pageBy) {
-      nodes {
-        ...ProductCard
-      }
-    }
-  }
-
-  ${PRODUCT_CARD_FRAGMENT}
-  ${FEATURED_COLLECTION_FRAGMENT}
-` as const;
