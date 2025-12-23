@@ -39,7 +39,7 @@ export function ComingSoonGate() {
                 playsInline
                 className="absolute inset-0 w-full h-full object-cover opacity-60"
             >
-                <source src="https://cdn.shopify.com/videos/c/o/v/4b920c78af3a4dcbb5661729637937e9.mp4" type="video/mp4" />
+                <source src="https://cdn.shopify.com/videos/c/o/v/09d8ad74e1d74766ac849672508da4b2.mov" type="video/quicktime" />
             </video>
 
             {/* Overlay Gradient */}
