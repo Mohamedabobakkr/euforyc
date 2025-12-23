@@ -5,5 +5,23 @@ node_modules
 /public/build
 /.mf
 .env
+.env.*
 .shopify
 .react-router
+
+# macOS
+.DS_Store
+*/.DS_Store
+
+# IDE
+.idea
+.vscode
+
+# Logs
+*.log
+npm-debug.log*
+
+# Large media files (use CDN in production)
+*.mp4
+*.mov
+*.MOV

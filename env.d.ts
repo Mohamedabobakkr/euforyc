@@ -7,14 +7,14 @@ import type {
   HydrogenCart,
   HydrogenSessionData,
 } from '@shopify/hydrogen';
-import type {Storefront, CustomerAccount} from '~/lib/type';
-import type {AppSession} from '~/lib/session.server';
+import type { Storefront, CustomerAccount } from '~/lib/type';
+import type { AppSession } from '~/lib/session.server';
 
 declare global {
   /**
    * A global `process` object is only available during build to access NODE_ENV.
    */
-  const process: {env: {NODE_ENV: 'production' | 'development'}};
+  const process: { env: { NODE_ENV: 'production' | 'development' } };
 
   /**
    * Declare expected Env parameter in fetch handler.
@@ -29,6 +29,9 @@ declare global {
     PUBLIC_CUSTOMER_ACCOUNT_API_URL: string;
     PUBLIC_CHECKOUT_DOMAIN: string;
     SHOP_ID: string;
+    COMING_SOON_MODE?: string;
+    KLAVIYO_PRIVATE_API_KEY: string;
+    KLAVIYO_LIST_ID: string;
   }
 }
 
@@ -48,8 +51,8 @@ declare module '@shopify/remix-oxygen' {
   /**
    * Declare local additions to the Remix session data.
    */
-  interface SessionData extends HydrogenSessionData {}
+  interface SessionData extends HydrogenSessionData { }
 }
 
 // Needed to make this file a module.
-export {};
+export { };

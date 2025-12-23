@@ -28,6 +28,7 @@ import invariant from 'tiny-invariant';
 import { PageLayout } from '~/components/PageLayout';
 import { GenericError } from '~/components/GenericError';
 import { NotFound } from '~/components/NotFound';
+import { ComingSoonGate } from '~/components/ComingSoonGate';
 import favicon from '~/assets/favicon.svg';
 import logo from '~/assets/logo.png';
 import { seoPayload } from '~/lib/seo.server';
@@ -119,9 +120,13 @@ async function loadCriticalData({ request, context }: LoaderFunctionArgs) {
 
   const { storefront, env } = context;
 
+  // Check if coming soon mode is enabled (password protection)
+  const isComingSoonMode = env.COMING_SOON_MODE === 'true';
+
   return {
     layout,
     seo,
+    isComingSoonMode,
     shop: getShopAnalytics({
       storefront,
       publicStorefrontId: env.PUBLIC_STOREFRONT_ID,
@@ -169,7 +174,10 @@ function Layout({ children }: { children?: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {data ? (
+        {data?.isComingSoonMode ? (
+          /* Coming Soon Gate - blocks all access until launch */
+          <ComingSoonGate />
+        ) : data ? (
           <Analytics.Provider
             cart={data.cart}
             shop={data.shop}

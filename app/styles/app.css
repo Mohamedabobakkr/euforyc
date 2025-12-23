@@ -57,6 +57,36 @@
   }
 }
 
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
 html,
 body {
   font-family: 'Kalice', 'Georgia', serif;
@@ -98,6 +128,13 @@ shop-pay-button {
 
   a.active {
     @apply border-b;
+  }
+
+  /* Remove blue focus outline from inputs */
+  input:focus,
+  input:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
   }
 
   .prose {
