@@ -34,6 +34,18 @@ function sanitizeEmail(email: string): string {
     return email.trim().toLowerCase().slice(0, 254);
 }
 
+// Sanitize and validate phone number
+function sanitizePhone(phone: string): string | null {
+    // Remove all non-digit characters except +
+    const cleaned = phone.replace(/[^\d+]/g, '');
+    // Basic validation: should have at least 10 digits
+    const digitsOnly = cleaned.replace(/\D/g, '');
+    if (digitsOnly.length >= 10 && digitsOnly.length <= 15) {
+        return cleaned;
+    }
+    return null;
+}
+
 export async function action({ request, context }: ActionFunctionArgs) {
     // Only allow POST requests
     if (request.method !== 'POST') {
@@ -59,6 +71,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     try {
         const formData = await request.formData();
         const rawEmail = formData.get('email');
+        const rawPhone = formData.get('phone');
 
         // Type check and validate email
         if (typeof rawEmail !== 'string' || !rawEmail) {
@@ -71,6 +84,9 @@ export async function action({ request, context }: ActionFunctionArgs) {
         if (!isValidEmail(email)) {
             return json({ error: 'Please enter a valid email address' }, { status: 400 });
         }
+
+        // Sanitize phone if provided
+        const phone = typeof rawPhone === 'string' && rawPhone ? sanitizePhone(rawPhone) : null;
 
         // Get Klaviyo credentials from environment (server-side only)
         const klaviyoApiKey = context.env.KLAVIYO_PRIVATE_API_KEY;
@@ -100,9 +116,11 @@ export async function action({ request, context }: ActionFunctionArgs) {
                         type: 'profile',
                         attributes: {
                             email: email,
+                            ...(phone && { phone_number: phone }),
                             properties: {
                                 source: 'Euforyc Coming Soon Waitlist',
                                 signed_up_at: new Date().toISOString(),
+                                ...(phone && { sms_opt_in: true }),
                             },
                         },
                     },

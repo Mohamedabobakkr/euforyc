@@ -10,11 +10,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 export function ComingSoonGate() {
     const fetcher = useFetcher<{ success: boolean; message?: string; error?: string }>();
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
+    const [wantsSms, setWantsSms] = useState(false);
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     const isLoading = fetcher.state === 'submitting';
     const data = fetcher.data;
+
+    // Detect mobile/desktop based on screen aspect ratio
+    useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerHeight > window.innerWidth);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     useEffect(() => {
         if (data?.success) {
@@ -22,25 +35,38 @@ export function ComingSoonGate() {
         }
     }, [data]);
 
+    // Play video when user signs up
     useEffect(() => {
-        if (videoRef.current) {
+        if (isSubmitted && videoRef.current) {
             videoRef.current.play().catch(console.error);
         }
-    }, []);
+    }, [isSubmitted]);
 
     return (
         <div className="fixed inset-0 w-full h-full overflow-hidden bg-dark-brown z-[9999]">
-            {/* Video Background */}
-            <video
-                ref={videoRef}
-                autoPlay
-                loop
-                muted
-                playsInline
-                className="absolute inset-0 w-full h-full object-cover opacity-60"
+            {/* Video Background - Only shows after signup */}
+            <motion.div
+                initial={{ opacity: 0, scale: 1.1 }}
+                animate={{
+                    opacity: isSubmitted ? 0.6 : 0,
+                    scale: isSubmitted ? 1 : 1.1
+                }}
+                transition={{ duration: 2, ease: 'easeOut' }}
+                className="absolute inset-0"
             >
-                <source src="https://cdn.shopify.com/videos/c/o/v/d6fa297e09ac40a98ee33ad43f70efbf.mp4" type="video/mp4" />
-            </video>
+                <video
+                    ref={videoRef}
+                    key={isMobile ? 'mobile' : 'desktop'}
+                    loop
+                    muted
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover"
+                    src={isMobile
+                        ? 'https://cdn.shopify.com/videos/c/o/v/00aac01a24f14e89a04a5c6508c6bdeb.mp4'
+                        : 'https://cdn.shopify.com/videos/c/o/v/d6fa297e09ac40a98ee33ad43f70efbf.mp4'
+                    }
+                />
+            </motion.div>
 
             {/* Overlay Gradient */}
             <div className="absolute inset-0 bg-gradient-to-b from-dark-brown/40 via-transparent to-dark-brown/80" />
@@ -91,7 +117,7 @@ export function ComingSoonGate() {
                             <fetcher.Form method="post" action="/api/waitlist" className="relative">
                                 {/* Glassmorphism Container */}
                                 <div
-                                    className="relative backdrop-blur-xl bg-white/10 rounded-full p-1.5 shadow-2xl"
+                                    className="relative backdrop-blur-xl bg-white/10 rounded-full p-1 sm:p-1.5 shadow-2xl"
                                     style={{ border: '1px solid rgba(255,255,255,0.2)' }}
                                 >
                                     <div className="flex items-center">
@@ -102,19 +128,23 @@ export function ComingSoonGate() {
                                             onChange={(e) => setEmail(e.target.value)}
                                             placeholder="Enter your email"
                                             required
+                                            autoComplete="email"
                                             style={{
                                                 outline: 'none',
                                                 boxShadow: 'none',
                                                 border: 'none',
-                                                background: 'transparent'
+                                                background: 'transparent',
+                                                WebkitTextFillColor: '#FAF9F6',
+                                                WebkitBackgroundClip: 'text',
+                                                backgroundClip: 'text'
                                             }}
-                                            className="flex-1 text-cream placeholder:text-cream/50 px-6 py-4 text-base"
+                                            className="flex-1 min-w-0 text-cream placeholder:text-cream/50 px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base [&:-webkit-autofill]:bg-transparent [&:-webkit-autofill]:shadow-[0_0_0_1000px_transparent_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:#FAF9F6]"
                                         />
                                         <button
                                             type="submit"
                                             disabled={isLoading}
                                             style={{ outline: 'none', boxShadow: 'none' }}
-                                            className="bg-cream text-dark-brown px-6 py-3 rounded-full font-medium text-sm uppercase tracking-widest hover:bg-white transition-all duration-300 disabled:opacity-50 whitespace-nowrap focus:outline-none"
+                                            className="bg-cream text-dark-brown px-4 sm:px-6 py-2.5 sm:py-3 rounded-full font-medium text-xs sm:text-sm uppercase tracking-wider sm:tracking-widest hover:bg-white transition-all duration-300 disabled:opacity-50 whitespace-nowrap flex-shrink-0 focus:outline-none"
                                         >
                                             {isLoading ? (
                                                 <span className="flex items-center gap-2">
@@ -130,6 +160,60 @@ export function ComingSoonGate() {
                                     </div>
                                 </div>
 
+                                {/* SMS Toggle */}
+                                <label className="flex items-center gap-3 mt-4 cursor-pointer group">
+                                    <div className="relative">
+                                        <input
+                                            type="checkbox"
+                                            checked={wantsSms}
+                                            onChange={(e) => setWantsSms(e.target.checked)}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-9 h-5 bg-cream/20 rounded-full peer-checked:bg-cream/40 transition-colors" />
+                                        <div className="absolute left-0.5 top-0.5 w-4 h-4 bg-cream/60 rounded-full peer-checked:translate-x-4 peer-checked:bg-cream transition-all" />
+                                    </div>
+                                    <span className="text-cream/60 text-sm group-hover:text-cream/80 transition-colors">
+                                        Also text me the launch alert
+                                    </span>
+                                </label>
+
+                                {/* Phone Input - Shows when SMS is enabled */}
+                                <AnimatePresence>
+                                    {wantsSms && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                                            animate={{ opacity: 1, height: 'auto', marginTop: 12 }}
+                                            exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="overflow-hidden"
+                                        >
+                                            <div
+                                                className="relative backdrop-blur-xl bg-white/10 rounded-full p-1 sm:p-1.5"
+                                                style={{ border: '1px solid rgba(255,255,255,0.2)' }}
+                                            >
+                                                <input
+                                                    type="tel"
+                                                    name="phone"
+                                                    value={phone}
+                                                    onChange={(e) => setPhone(e.target.value)}
+                                                    placeholder="Phone number"
+                                                    autoComplete="tel"
+                                                    style={{
+                                                        outline: 'none',
+                                                        boxShadow: 'none',
+                                                        border: 'none',
+                                                        background: 'transparent',
+                                                        WebkitTextFillColor: '#FAF9F6',
+                                                        WebkitBackgroundClip: 'text',
+                                                        backgroundClip: 'text'
+                                                    }}
+                                                    className="w-full text-cream placeholder:text-cream/50 px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base [&:-webkit-autofill]:bg-transparent [&:-webkit-autofill]:shadow-[0_0_0_1000px_transparent_inset] [&:-webkit-autofill]:[-webkit-text-fill-color:#FAF9F6]"
+                                                />
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
                                 {/* Error Message */}
                                 {data?.error && (
                                     <motion.p
@@ -144,7 +228,7 @@ export function ComingSoonGate() {
 
                             {/* CTA Note */}
                             <p className="text-cream/50 text-sm mt-6 tracking-wide font-light">
-                                By joining, you agree to receive marketing emails. Unsubscribe anytime.
+                                By joining, you agree to receive marketing {wantsSms ? 'emails & texts' : 'emails'}. Unsubscribe anytime.
                             </p>
                         </motion.div>
                     ) : (
@@ -185,7 +269,7 @@ export function ComingSoonGate() {
                     className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-8"
                 >
                     <a
-                        href="https://instagram.com/euforycwear"
+                        href="https://www.instagram.com/euforyc/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-cream/60 hover:text-cream transition-colors duration-300"
